@@ -17,7 +17,7 @@ def main_menu_kb(is_admin: bool = False) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.row(
         InlineKeyboardButton(text="Корпоративный клиент", callback_data="menu:corporate"),
-        InlineKeyboardButton(text="Обычный клиент", callback_data="menu:regular"),
+        InlineKeyboardButton(text="Клиент", callback_data="menu:regular"),
         width=2,
     )
     builder.row(
