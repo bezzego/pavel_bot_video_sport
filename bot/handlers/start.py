@@ -24,6 +24,8 @@ async def cmd_start(message: Message, db: Database, config: Settings, state: FSM
     if config.welcome_video_file_id:
         await message.answer_video(config.welcome_video_file_id)
     await message.answer(WELCOME_SHORT_DESCRIPTION, parse_mode="HTML")
+    if config.promo_video_file_id:
+        await message.answer_video(config.promo_video_file_id)
     await message.answer(
         "Добро пожаловать! Выберите тип доступа или откройте меню:",
         reply_markup=main_menu_kb(is_admin=is_admin(message.from_user.id, config.admin_ids)),

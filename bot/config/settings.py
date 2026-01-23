@@ -56,6 +56,7 @@ class Settings:
     error_admin_id: int
     support_contact: str
     welcome_video_file_id: str
+    promo_video_file_id: str
     corporate_password: str
     db_url: str
     yoomoney_token: str
@@ -89,6 +90,7 @@ def load_settings() -> Settings:
         error_admin_id=error_admin_id,
         support_contact=os.getenv("SUPPORT_CONTACT", ""),
         welcome_video_file_id=os.getenv("WELCOME_VIDEO_FILE_ID", ""),
+        promo_video_file_id=os.getenv("PROMO_VIDEO_FILE_ID", ""),
         corporate_password=os.getenv("CORPORATE_PASSWORD", ""),
         db_url=os.getenv("DB_URL", "sqlite+aiosqlite:///./db.sqlite3"),
         yoomoney_token=os.getenv("YOUMONEY_TOKEN", ""),
