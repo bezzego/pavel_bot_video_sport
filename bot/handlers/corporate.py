@@ -8,7 +8,7 @@ from aiogram.types import CallbackQuery, Message
 from bot.config.settings import Settings
 from bot.db.database import Database
 from bot.db import repository
-from bot.keyboards.menu import corporate_videos_kb
+from bot.keyboards.menu import corporate_videos_kb, main_menu_only_kb
 from bot.utils.time import now_ts
 
 router = Router()
@@ -39,12 +39,13 @@ async def corporate_entry(query: CallbackQuery, db: Database, config: Settings, 
         logger.warning("Corporate blocked user_id=%s minutes=%s", query.from_user.id, remain)
         await query.message.answer(
             f"Слишком много попыток. Повторите через {remain} мин.")
+        await query.message.answer("Вы можете вернуться в главное меню.", reply_markup=main_menu_only_kb())
         await query.answer()
         return
 
     logger.info("Corporate password requested user_id=%s", query.from_user.id)
     await state.set_state(CorporateStates.waiting_password)
-    await query.message.answer("Введите корпоративный пароль:")
+    await query.message.answer("Введите корпоративный пароль:", reply_markup=main_menu_only_kb())
     await query.answer()
 
 
@@ -78,8 +79,10 @@ async def corporate_password(message: Message, db: Database, config: Settings, s
         await state.clear()
         await message.answer(
             f"Неверный пароль. Попробуйте снова через {config.corporate_block_minutes} мин.")
+        await message.answer("Вы можете вернуться в главное меню.", reply_markup=main_menu_only_kb())
     else:
         await message.answer(
             f"Неверный пароль. Осталось попыток: {config.corporate_max_attempts - attempts}"
         )
+        await message.answer("Вы можете вернуться в главное меню.", reply_markup=main_menu_only_kb())
     await repository.set_corporate_auth(db, message.from_user.id, attempts, blocked_until)

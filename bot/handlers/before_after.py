@@ -5,7 +5,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, InputMediaPhoto
 from aiogram.types.input_file import FSInputFile
 
-from bot.keyboards.menu import before_after_kb
+from bot.keyboards.menu import before_after_kb, main_menu_only_kb
 from bot.services.before_after import build_collage, list_before_after_pairs
 
 router = Router()
@@ -20,7 +20,10 @@ async def _show_page(query: CallbackQuery, state: FSMContext, page: int) -> None
     pairs = list_before_after_pairs()
     total = len(pairs)
     if total == 0:
-        await query.message.answer("Пока нет фото для раздела До/После.")
+        await query.message.answer(
+            "Пока нет фото для раздела До/После.",
+            reply_markup=main_menu_only_kb(),
+        )
         await query.answer()
         return
 

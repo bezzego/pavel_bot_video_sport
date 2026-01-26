@@ -117,6 +117,12 @@ def payment_kb(pay_url: str, payment_id: int) -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
+def main_menu_only_kb() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(text="Главное меню", callback_data="menu:main"))
+    return builder.as_markup()
+
+
 def admin_panel_kb() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.row(
