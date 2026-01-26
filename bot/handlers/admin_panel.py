@@ -19,6 +19,7 @@ from bot.db import repository
 from bot.keyboards.menu import admin_confirm_kb, admin_export_kb, admin_panel_kb, admin_videos_kb
 from bot.utils.admin import is_admin
 from bot.utils.time import now_ts
+from bot.utils.cleanup import send_and_replace
 
 router = Router()
 logger = logging.getLogger("handlers.admin_panel")
@@ -119,7 +120,7 @@ async def admin_panel(query: CallbackQuery, state: FSMContext, config: Settings)
         return
     logger.info("Admin panel opened user_id=%s", query.from_user.id)
     await state.clear()
-    await query.message.answer("Админ-панель:", reply_markup=admin_panel_kb())
+    await send_and_replace(query.message, "Админ-панель:", reply_markup=admin_panel_kb())
     await query.answer()
 
 
@@ -154,7 +155,7 @@ async def admin_stats(query: CallbackQuery, db: Database, config: Settings) -> N
         f"Платежей успешных: {payments_success['cnt']}\n"
         f"Платежей в ожидании: {payments_pending['cnt']}"
     )
-    await query.message.answer(message_text, reply_markup=admin_panel_kb())
+    await send_and_replace(query.message, message_text, reply_markup=admin_panel_kb())
     await query.answer()
 
 
@@ -163,7 +164,7 @@ async def admin_export_menu(query: CallbackQuery, config: Settings) -> None:
     if not await _ensure_admin(query, config):
         return
     logger.info("Admin export menu user_id=%s", query.from_user.id)
-    await query.message.answer("Экспорт данных:", reply_markup=admin_export_kb())
+    await send_and_replace(query.message, "Экспорт данных:", reply_markup=admin_export_kb())
     await query.answer()
 
 
@@ -250,7 +251,8 @@ async def admin_broadcast_start(query: CallbackQuery, state: FSMContext, config:
         return
     logger.info("Admin broadcast start user_id=%s", query.from_user.id)
     await state.set_state(AdminPanelStates.broadcast_waiting)
-    await query.message.answer(
+    await send_and_replace(
+        query.message,
         "Отправьте контент для рассылки: текст, фото, видео или кружочек. "
         "Поддерживается HTML-разметка.",
     )
@@ -355,7 +357,7 @@ async def admin_cancel(query: CallbackQuery, state: FSMContext, config: Settings
         return
     logger.info("Admin action canceled user_id=%s", query.from_user.id)
     await state.clear()
-    await query.message.answer("Действие отменено.", reply_markup=admin_panel_kb())
+    await send_and_replace(query.message, "Действие отменено.", reply_markup=admin_panel_kb())
     await query.answer()
 
 
@@ -365,7 +367,10 @@ async def admin_corp_reset(query: CallbackQuery, state: FSMContext, config: Sett
         return
     logger.info("Admin corporate reset start user_id=%s", query.from_user.id)
     await state.set_state(AdminPanelStates.corp_reset_waiting)
-    await query.message.answer("Введите ID пользователя для перевода в обычного клиента:")
+    await send_and_replace(
+        query.message,
+        "Введите ID пользователя для перевода в обычного клиента:",
+    )
     await query.answer()
 
 
@@ -394,7 +399,10 @@ async def admin_corp_password(query: CallbackQuery, state: FSMContext, config: S
         return
     logger.info("Admin corporate password change start user_id=%s", query.from_user.id)
     await state.set_state(AdminPanelStates.corp_password_waiting)
-    await query.message.answer("Введите новый пароль для корпоративных клиентов:")
+    await send_and_replace(
+        query.message,
+        "Введите новый пароль для корпоративных клиентов:",
+    )
     await query.answer()
 
 
@@ -422,7 +430,8 @@ async def admin_intro(query: CallbackQuery, db: Database, state: FSMContext, con
         current = "(текущее значение по умолчанию)"
     safe_current = html.escape(current)
     await state.set_state(AdminPanelStates.intro_waiting)
-    await query.message.answer(
+    await send_and_replace(
+        query.message,
         "Текущий текст перед выбором:\n"
         f"<pre>{safe_current}</pre>\n\n"
         "Отправьте новый текст (часть до \"Выбрано\" и \"Итого\").",
@@ -451,7 +460,7 @@ async def admin_videos(query: CallbackQuery, db: Database, config: Settings) -> 
         return
     logger.info("Admin videos menu user_id=%s", query.from_user.id)
     videos = await repository.list_videos(db)
-    await query.message.answer("Управление видео:", reply_markup=admin_videos_kb(videos))
+    await send_and_replace(query.message, "Управление видео:", reply_markup=admin_videos_kb(videos))
     await query.answer()
 
 
@@ -461,7 +470,10 @@ async def admin_video_add_start(query: CallbackQuery, state: FSMContext, config:
         return
     logger.info("Admin video add start user_id=%s", query.from_user.id)
     await state.set_state(AdminPanelStates.video_add_waiting)
-    await query.message.answer("Отправьте видео. Подпись будет названием урока.")
+    await send_and_replace(
+        query.message,
+        "Отправьте видео. Подпись будет названием урока.",
+    )
     await query.answer()
 
 
@@ -502,5 +514,5 @@ async def admin_video_delete(query: CallbackQuery, db: Database, config: Setting
     await repository.delete_video(db, video_id)
     logger.info("Admin video deleted id=%s user_id=%s", video_id, query.from_user.id)
     videos = await repository.list_videos(db)
-    await query.message.answer("Видео удалено.", reply_markup=admin_videos_kb(videos))
+    await send_and_replace(query.message, "Видео удалено.", reply_markup=admin_videos_kb(videos))
     await query.answer()

@@ -11,6 +11,7 @@ from bot.db.database import Database
 from bot.db.repository import get_or_create_user
 from bot.keyboards.menu import main_menu_kb
 from bot.utils.admin import is_admin
+from bot.utils.cleanup import send_and_replace
 
 router = Router()
 logger = logging.getLogger("handlers.start")
@@ -26,7 +27,8 @@ async def cmd_start(message: Message, db: Database, config: Settings, state: FSM
     await message.answer(WELCOME_SHORT_DESCRIPTION, parse_mode="HTML")
     if config.promo_video_file_id:
         await message.answer_video(config.promo_video_file_id)
-    await message.answer(
+    await send_and_replace(
+        message,
         "Добро пожаловать! Выберите тип доступа или откройте меню:",
         reply_markup=main_menu_kb(is_admin=is_admin(message.from_user.id, config.admin_ids)),
     )
@@ -36,7 +38,8 @@ async def cmd_start(message: Message, db: Database, config: Settings, state: FSM
 async def menu_main(query: CallbackQuery, state: FSMContext, config: Settings) -> None:
     logger.debug("Main menu requested user_id=%s", query.from_user.id)
     await state.clear()
-    await query.message.answer(
+    await send_and_replace(
+        query.message,
         "Главное меню:",
         reply_markup=main_menu_kb(is_admin=is_admin(query.from_user.id, config.admin_ids)),
     )

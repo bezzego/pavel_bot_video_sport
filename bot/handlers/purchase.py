@@ -15,6 +15,7 @@ from bot.keyboards.menu import my_videos_kb, payment_kb, purchase_selection_kb
 from bot.services.pricing import calculate_total
 from bot.services.yoomoney import YooMoneyClient
 from bot.utils.time import now_ts
+from bot.utils.cleanup import send_and_replace
 
 router = Router()
 logger = logging.getLogger("handlers.purchase")
@@ -72,7 +73,8 @@ async def _show_selection(query: CallbackQuery, db: Database, state: FSMContext,
             reply_markup=purchase_selection_kb(selected_ids, videos, duration_days),
         )
     else:
-        await query.message.answer(
+        await send_and_replace(
+            query.message,
             text,
             reply_markup=purchase_selection_kb(selected_ids, videos, duration_days),
         )
@@ -89,7 +91,10 @@ async def purchase_entry(
     await repository.get_or_create_user(db, query.from_user.id)
     user = await repository.get_user(db, query.from_user.id)
     if user and user.get("is_corporate"):
-        await query.message.answer("У вас корпоративный доступ. Покупка не требуется.")
+        await send_and_replace(
+            query.message,
+            "У вас корпоративный доступ. Покупка не требуется.",
+        )
         await query.answer()
         return
 
@@ -149,7 +154,10 @@ async def selection_action(
             await query.answer("Сейчас нет доступных видео")
             return
         if not yoomoney.enabled:
-            await query.message.answer("Оплата временно недоступна. Попробуйте позже.")
+            await send_and_replace(
+                query.message,
+                "Оплата временно недоступна. Попробуйте позже.",
+            )
             await query.answer()
             return
 
@@ -194,7 +202,8 @@ async def selection_action(
             )
 
         pay_url = yoomoney.build_payment_url(amount, label, "Доступ к видео-урокам")
-        await query.message.answer(
+        await send_and_replace(
+            query.message,
             "Ссылка на оплату подготовлена. После оплаты нажмите кнопку проверки.",
             reply_markup=payment_kb(pay_url, payment_id),
         )
@@ -226,7 +235,8 @@ async def payment_check(
 
     if payment["status"] == "success":
         videos = await repository.list_accessible_videos(db, payment["user_id"])
-        await query.message.answer(
+        await send_and_replace(
+            query.message,
             "Оплата уже подтверждена.",
             reply_markup=my_videos_kb(videos),
         )
@@ -241,7 +251,10 @@ async def payment_check(
     )
     is_paid = await yoomoney.check_payment(payment["label"])
     if not is_paid:
-        await query.message.answer("Платеж пока не найден. Попробуйте позже.")
+        await send_and_replace(
+            query.message,
+            "Платеж пока не найден. Попробуйте позже.",
+        )
         await query.answer()
         return
 
@@ -257,7 +270,8 @@ async def payment_check(
             payment_id,
             payment["user_id"],
         )
-        await query.message.answer(
+        await send_and_replace(
+            query.message,
             "Оплата подтверждена. Доступ открыт на 30 дней.",
             reply_markup=my_videos_kb(videos),
         )
@@ -267,5 +281,5 @@ async def payment_check(
             payment_id,
             payment["user_id"],
         )
-        await query.message.answer("Оплата уже обработана.")
+        await send_and_replace(query.message, "Оплата уже обработана.")
     await query.answer()

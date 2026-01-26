@@ -9,6 +9,7 @@ from bot.db import repository
 from bot.keyboards.menu import corporate_videos_kb, main_menu_only_kb, my_videos_kb
 from bot.services.video_sender import send_video_and_schedule
 from bot.utils.time import now_ts
+from bot.utils.cleanup import send_and_replace
 
 router = Router()
 logger = logging.getLogger("handlers.videos")
@@ -75,7 +76,8 @@ async def open_video(query: CallbackQuery, db: Database, config: Settings) -> No
                 video_id,
                 access_until,
             )
-            await query.message.answer(
+            await send_and_replace(
+                query.message,
                 "Доступ к этому видео отсутствует или истек.",
                 reply_markup=main_menu_only_kb(),
             )
@@ -85,7 +87,8 @@ async def open_video(query: CallbackQuery, db: Database, config: Settings) -> No
     video = await repository.get_video(db, video_id)
     if not video or not video.get("file_id"):
         logger.warning("Video missing file_id video_id=%s", video_id)
-        await query.message.answer(
+        await send_and_replace(
+            query.message,
             "Видео пока не добавлено. Попробуйте позже.",
             reply_markup=main_menu_only_kb(),
         )

@@ -7,6 +7,7 @@ from aiogram.types.input_file import FSInputFile
 
 from bot.keyboards.menu import before_after_kb, main_menu_only_kb
 from bot.services.before_after import build_collage, list_before_after_pairs
+from bot.utils.cleanup import send_and_replace
 
 router = Router()
 logger = logging.getLogger("handlers.before_after")
@@ -20,7 +21,8 @@ async def _show_page(query: CallbackQuery, state: FSMContext, page: int) -> None
     pairs = list_before_after_pairs()
     total = len(pairs)
     if total == 0:
-        await query.message.answer(
+        await send_and_replace(
+            query.message,
             "Пока нет фото для раздела До/После.",
             reply_markup=main_menu_only_kb(),
         )
