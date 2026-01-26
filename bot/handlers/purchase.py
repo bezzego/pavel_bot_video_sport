@@ -53,7 +53,7 @@ async def _selection_text(db: Database, selected_ids: list[int], total: int, dur
         "10 уроков — 3800р.\n\n"
         f"Выбранный срок доступа: {duration_label}\n"
         f"Выбрано: {selected_str}\n"
-        f"Итого: {total} ₽"
+        f"Стоимость: {total} ₽"
     )
 
 

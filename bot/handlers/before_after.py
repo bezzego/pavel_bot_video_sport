@@ -29,7 +29,7 @@ async def _show_page(query: CallbackQuery, state: FSMContext, page: int) -> None
 
     data = await state.get_data()
     media_message_id = data.get("media_message_id")
-    caption = f"До/После {page}/{total}"
+    caption = f"До/После"
     collage_path = build_collage(pair.before_path, pair.after_path)
 
     try:
