@@ -187,6 +187,12 @@ def admin_confirm_kb(action: str) -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
+def admin_cancel_kb() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(text="Отмена", callback_data="admin:cancel"))
+    return builder.as_markup()
+
+
 def before_after_kb(page: int, total: int) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     prev_page = max(1, page - 1)

@@ -16,14 +16,23 @@ def _get_last(chat_id: int) -> int | None:
     return _last_bot_message.get(chat_id)
 
 
+async def delete_last(bot: Any, chat_id: int) -> None:
+    last_id = _get_last(chat_id)
+    if not last_id:
+        return
+    try:
+        await bot.delete_message(chat_id, last_id)
+    except Exception:
+        logger.debug("Failed to delete previous bot message chat_id=%s msg_id=%s", chat_id, last_id)
+
+
 async def send_and_replace(message: Message, text: str, **kwargs: Any) -> Message:
     chat_id = message.chat.id
-    last_id = _get_last(chat_id)
-    if last_id:
-        try:
-            await message.bot.delete_message(chat_id, last_id)
-        except Exception:
-            logger.debug("Failed to delete previous bot message chat_id=%s msg_id=%s", chat_id, last_id)
+    await delete_last(message.bot, chat_id)
     sent = await message.answer(text, **kwargs)
     _set_last(chat_id, sent.message_id)
     return sent
+
+
+def track_last(chat_id: int, message_id: int) -> None:
+    _set_last(chat_id, message_id)

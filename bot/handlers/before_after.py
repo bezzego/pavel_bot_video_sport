@@ -7,7 +7,7 @@ from aiogram.types.input_file import FSInputFile
 
 from bot.keyboards.menu import before_after_kb, main_menu_only_kb
 from bot.services.before_after import build_collage, list_before_after_pairs
-from bot.utils.cleanup import send_and_replace
+from bot.utils.cleanup import delete_last, send_and_replace, track_last
 
 router = Router()
 logger = logging.getLogger("handlers.before_after")
@@ -55,12 +55,14 @@ async def _show_page(query: CallbackQuery, state: FSMContext, page: int) -> None
                 media_message_id = None
 
         if not media_message_id:
+            await delete_last(query.bot, query.message.chat.id)
             sent = await query.message.answer_photo(
                 FSInputFile(collage_path),
                 caption=caption,
                 reply_markup=before_after_kb(page, total),
             )
             media_message_id = sent.message_id
+            track_last(query.message.chat.id, media_message_id)
     finally:
         try:
             collage_path.unlink()

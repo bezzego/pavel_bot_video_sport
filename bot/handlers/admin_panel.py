@@ -16,7 +16,13 @@ from aiogram.types import InputMediaPhoto, InputMediaVideo
 from bot.config.settings import Settings
 from bot.db.database import Database
 from bot.db import repository
-from bot.keyboards.menu import admin_confirm_kb, admin_export_kb, admin_panel_kb, admin_videos_kb
+from bot.keyboards.menu import (
+    admin_cancel_kb,
+    admin_confirm_kb,
+    admin_export_kb,
+    admin_panel_kb,
+    admin_videos_kb,
+)
 from bot.utils.admin import is_admin
 from bot.utils.time import now_ts
 from bot.utils.cleanup import send_and_replace
@@ -255,6 +261,7 @@ async def admin_broadcast_start(query: CallbackQuery, state: FSMContext, config:
         query.message,
         "Отправьте контент для рассылки: текст, фото, видео или кружочек. "
         "Поддерживается HTML-разметка.",
+        reply_markup=admin_cancel_kb(),
     )
     await query.answer()
 
@@ -370,6 +377,7 @@ async def admin_corp_reset(query: CallbackQuery, state: FSMContext, config: Sett
     await send_and_replace(
         query.message,
         "Введите ID пользователя для перевода в обычного клиента:",
+        reply_markup=admin_cancel_kb(),
     )
     await query.answer()
 
@@ -402,6 +410,7 @@ async def admin_corp_password(query: CallbackQuery, state: FSMContext, config: S
     await send_and_replace(
         query.message,
         "Введите новый пароль для корпоративных клиентов:",
+        reply_markup=admin_cancel_kb(),
     )
     await query.answer()
 
@@ -436,6 +445,7 @@ async def admin_intro(query: CallbackQuery, db: Database, state: FSMContext, con
         f"<pre>{safe_current}</pre>\n\n"
         "Отправьте новый текст (часть до \"Выбрано\" и \"Итого\").",
         parse_mode="HTML",
+        reply_markup=admin_cancel_kb(),
     )
     await query.answer()
 
@@ -473,6 +483,7 @@ async def admin_video_add_start(query: CallbackQuery, state: FSMContext, config:
     await send_and_replace(
         query.message,
         "Отправьте видео. Подпись будет названием урока.",
+        reply_markup=admin_cancel_kb(),
     )
     await query.answer()
 
