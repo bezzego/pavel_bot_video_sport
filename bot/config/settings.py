@@ -58,6 +58,7 @@ class Settings:
     welcome_video_file_id: str
     promo_video_file_id: str
     corporate_password: str
+    offer_url: str
     db_url: str
     yoomoney_token: str
     yoomoney_wallet: str
@@ -92,6 +93,10 @@ def load_settings() -> Settings:
         welcome_video_file_id=os.getenv("WELCOME_VIDEO_FILE_ID", ""),
         promo_video_file_id=os.getenv("PROMO_VIDEO_FILE_ID", ""),
         corporate_password=os.getenv("CORPORATE_PASSWORD", ""),
+        offer_url=os.getenv(
+            "OFFER_URL",
+            "https://drive.google.com/file/d/1oCMl8gqP3j5e-EIA1Qz4ElwZfjxpuhdt/view?usp=sharing",
+        ),
         db_url=os.getenv("DB_URL", "sqlite+aiosqlite:///./db.sqlite3"),
         yoomoney_token=os.getenv("YOUMONEY_TOKEN", ""),
         yoomoney_wallet=os.getenv("YOUMONEY_WALLET", ""),

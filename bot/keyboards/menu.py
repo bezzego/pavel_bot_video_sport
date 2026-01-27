@@ -117,6 +117,17 @@ def payment_kb(pay_url: str, payment_id: int) -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
+def offer_kb(offer_url: str) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(text="Открыть оферту", url=offer_url))
+    builder.row(
+        InlineKeyboardButton(text="Согласен с офертой", callback_data="offer:agree"),
+        InlineKeyboardButton(text="Отмена", callback_data="menu:main"),
+        width=2,
+    )
+    return builder.as_markup()
+
+
 def main_menu_only_kb() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.row(InlineKeyboardButton(text="Главное меню", callback_data="menu:main"))

@@ -11,7 +11,7 @@ from bot.config.settings import Settings
 from bot.content_texts import LESSONS_LIST
 from bot.db.database import Database
 from bot.db import repository
-from bot.keyboards.menu import my_videos_kb, payment_kb, purchase_selection_kb
+from bot.keyboards.menu import my_videos_kb, offer_kb, payment_kb, purchase_selection_kb
 from bot.services.pricing import calculate_total
 from bot.services.yoomoney import YooMoneyClient
 from bot.utils.time import now_ts
@@ -23,6 +23,7 @@ logger = logging.getLogger("handlers.purchase")
 
 class PurchaseStates(StatesGroup):
     selecting = State()
+    awaiting_offer = State()
 
 
 DEFAULT_PURCHASE_INTRO = (
@@ -160,59 +161,88 @@ async def selection_action(
             )
             await query.answer()
             return
-
-        amount = calculate_total(len(selected_list), duration_days)
-        existing = await repository.get_pending_payment_for_user(db, query.from_user.id)
-        if existing:
-            existing_selected = json.loads(existing["selected_video_ids"])
-            existing_duration = int(existing.get("duration_days") or 30)
-            if sorted(existing_selected) == selected_list and existing_duration == duration_days:
-                payment_id = existing["id"]
-                label = existing["label"]
-                amount = existing["amount"]
-                logging.getLogger("payment").info(
-                    "Reusing pending payment id=%s user_id=%s amount=%s videos=%s duration_days=%s",
-                    payment_id,
-                    query.from_user.id,
-                    amount,
-                    selected_list,
-                    duration_days,
-                )
-            else:
-                existing = None
-
-        if not existing:
-            label = f"{query.from_user.id}-{uuid.uuid4().hex[:8]}"
-            payment_id = await repository.create_payment(
-                db,
-                query.from_user.id,
-                label,
-                amount,
-                selected_list,
-                duration_days,
-            )
-            logging.getLogger("payment").info(
-                "Created payment id=%s user_id=%s amount=%s videos=%s duration_days=%s label=%s",
-                payment_id,
-                query.from_user.id,
-                amount,
-                selected_list,
-                duration_days,
-                label,
-            )
-
-        pay_url = yoomoney.build_payment_url(amount, label, "Доступ к видео-урокам")
+        await state.update_data(
+            pending_selected=selected_list,
+            pending_duration_days=duration_days,
+        )
+        await state.set_state(PurchaseStates.awaiting_offer)
         await send_and_replace(
             query.message,
-            "Ссылка на оплату подготовлена. После оплаты нажмите кнопку проверки.",
-            reply_markup=payment_kb(pay_url, payment_id),
+            "Перед оплатой необходимо согласиться с публичной офертой.",
+            reply_markup=offer_kb(config.offer_url),
         )
-        await state.clear()
         await query.answer()
         return
 
     await state.update_data(selected_ids=sorted(selected_ids), duration_days=duration_days)
     await _show_selection(query, db, state, config)
+
+
+@router.callback_query(PurchaseStates.awaiting_offer, F.data == "offer:agree")
+async def offer_agree(
+    query: CallbackQuery,
+    db: Database,
+    config: Settings,
+    state: FSMContext,
+    yoomoney: YooMoneyClient,
+) -> None:
+    data = await state.get_data()
+    selected_list = data.get("pending_selected", [])
+    duration_days = int(data.get("pending_duration_days", 30))
+    if not selected_list:
+        await query.answer("Сначала выберите уроки")
+        await state.set_state(PurchaseStates.selecting)
+        await _show_selection(query, db, state, config)
+        return
+
+    amount = calculate_total(len(selected_list), duration_days)
+    existing = await repository.get_pending_payment_for_user(db, query.from_user.id)
+    if existing:
+        existing_selected = json.loads(existing["selected_video_ids"])
+        existing_duration = int(existing.get("duration_days") or 30)
+        if sorted(existing_selected) == sorted(selected_list) and existing_duration == duration_days:
+            payment_id = existing["id"]
+            label = existing["label"]
+            amount = existing["amount"]
+            logging.getLogger("payment").info(
+                "Reusing pending payment id=%s user_id=%s amount=%s videos=%s duration_days=%s",
+                payment_id,
+                query.from_user.id,
+                amount,
+                selected_list,
+                duration_days,
+            )
+        else:
+            existing = None
+
+    if not existing:
+        label = f"{query.from_user.id}-{uuid.uuid4().hex[:8]}"
+        payment_id = await repository.create_payment(
+            db,
+            query.from_user.id,
+            label,
+            amount,
+            selected_list,
+            duration_days,
+        )
+        logging.getLogger("payment").info(
+            "Created payment id=%s user_id=%s amount=%s videos=%s duration_days=%s label=%s",
+            payment_id,
+            query.from_user.id,
+            amount,
+            selected_list,
+            duration_days,
+            label,
+        )
+
+    pay_url = yoomoney.build_payment_url(amount, label, "Доступ к видео-урокам")
+    await send_and_replace(
+        query.message,
+        "Ссылка на оплату подготовлена. После оплаты нажмите кнопку проверки.",
+        reply_markup=payment_kb(pay_url, payment_id),
+    )
+    await state.clear()
+    await query.answer()
 
 
 @router.callback_query(F.data.startswith("payment:check:"))
