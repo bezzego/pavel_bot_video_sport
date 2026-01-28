@@ -66,6 +66,8 @@ class Settings:
     price_coef: Dict[int, float]
     check_payments_interval_sec: int
     delete_check_interval_sec: int
+    access_notify_days: int
+    access_notify_interval_sec: int
     corporate_max_attempts: int
     corporate_block_minutes: int
     video_file_ids: List[str]
@@ -104,6 +106,8 @@ def load_settings() -> Settings:
         price_coef=_parse_price_coef(os.getenv("PRICE_COEF_JSON", "")),
         check_payments_interval_sec=int(os.getenv("CHECK_PAYMENTS_INTERVAL_SEC", "10")),
         delete_check_interval_sec=int(os.getenv("DELETE_CHECK_INTERVAL_SEC", "60")),
+        access_notify_days=int(os.getenv("ACCESS_NOTIFY_DAYS", "2")),
+        access_notify_interval_sec=int(os.getenv("ACCESS_NOTIFY_INTERVAL_SEC", "3600")),
         corporate_max_attempts=int(os.getenv("CORPORATE_MAX_ATTEMPTS", "5")),
         corporate_block_minutes=int(os.getenv("CORPORATE_BLOCK_MINUTES", "10")),
         video_file_ids=_load_video_file_ids(),

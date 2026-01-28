@@ -50,7 +50,7 @@ async def payment_checker_loop(
                 try:
                     await bot.send_message(
                         payment["user_id"],
-                        "Оплата подтверждена. Доступ к видео открыт на 30 дней.",
+                        f"Оплата подтверждена. Доступ к видео открыт на {duration_days} дней.",
                         reply_markup=my_videos_kb(video_ids),
                     )
                 except Exception:
@@ -88,6 +88,49 @@ async def delete_checker_loop(bot: Bot, db: Database, config: Settings) -> None:
         await asyncio.sleep(config.delete_check_interval_sec)
 
 
+async def access_notify_loop(bot: Bot, db: Database, config: Settings) -> None:
+    logger = logging.getLogger("access_notify")
+    logger.info(
+        "Access notify started interval=%ss days=%s",
+        config.access_notify_interval_sec,
+        config.access_notify_days,
+    )
+    while True:
+        try:
+            now = now_ts()
+            threshold = now + config.access_notify_days * 86400
+            rows = await db.fetchall(
+                """
+                SELECT user_id, MAX(access_until) AS max_until
+                FROM user_video_access
+                GROUP BY user_id
+                """
+            )
+            for row in rows:
+                user_id = row["user_id"]
+                max_until = row.get("max_until")
+                if not max_until or max_until <= now or max_until > threshold:
+                    continue
+                notified_until = await repository.get_notified_until(db, user_id)
+                if notified_until and int(notified_until) == int(max_until):
+                    continue
+                remaining_days = max(0, int((max_until - now) / 86400) + 1)
+                try:
+                    await bot.send_message(
+                        user_id,
+                        f"Доступ к урокам истекает через {remaining_days} дн. "
+                        "Чтобы продлить, выберите новые уроки в меню.",
+                    )
+                    await repository.set_notified_until(db, user_id, int(max_until))
+                except Exception:
+                    logger.exception("Failed to notify user %s", user_id)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("Access notify loop failed")
+        await asyncio.sleep(config.access_notify_interval_sec)
+
+
 def start_background_tasks(
     bot: Bot,
     db: Database,
@@ -97,6 +140,7 @@ def start_background_tasks(
     tasks = [
         asyncio.create_task(payment_checker_loop(bot, db, yoomoney, config)),
         asyncio.create_task(delete_checker_loop(bot, db, config)),
+        asyncio.create_task(access_notify_loop(bot, db, config)),
     ]
     return tasks
 

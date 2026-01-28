@@ -300,9 +300,10 @@ async def payment_check(
             payment_id,
             payment["user_id"],
         )
+        days_left = duration_days
         await send_and_replace(
             query.message,
-            "Оплата подтверждена. Доступ открыт на 30 дней.",
+            f"Оплата подтверждена. Доступ открыт на {days_left} дней.",
             reply_markup=my_videos_kb(videos),
         )
     else:

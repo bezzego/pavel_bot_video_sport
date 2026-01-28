@@ -207,13 +207,49 @@ async def list_accessible_videos(db: Database, user_id: int) -> List[dict]:
     now = now_ts()
     return await db.fetchall(
         """
-        SELECT v.* FROM videos v
+        SELECT v.*, uva.access_until FROM videos v
         JOIN user_video_access uva ON uva.video_id = v.id
         WHERE uva.user_id = ? AND uva.access_until > ?
         ORDER BY v.id
         """,
         (user_id, now),
     )
+
+
+async def get_max_access_until(db: Database, user_id: int) -> Optional[int]:
+    row = await db.fetchone(
+        "SELECT MAX(access_until) AS max_until FROM user_video_access WHERE user_id = ?",
+        (user_id,),
+    )
+    if not row:
+        return None
+    return row.get("max_until")
+
+
+async def get_notified_until(db: Database, user_id: int) -> Optional[int]:
+    row = await db.fetchone(
+        "SELECT notified_until FROM access_notifications WHERE user_id = ?",
+        (user_id,),
+    )
+    if not row:
+        return None
+    return row.get("notified_until")
+
+
+async def set_notified_until(db: Database, user_id: int, notified_until: int) -> None:
+    logger = logging.getLogger("db.repository")
+    existing = await get_notified_until(db, user_id)
+    if existing is None:
+        await db.execute(
+            "INSERT INTO access_notifications (user_id, notified_until) VALUES (?, ?)",
+            (user_id, notified_until),
+        )
+    else:
+        await db.execute(
+            "UPDATE access_notifications SET notified_until = ? WHERE user_id = ?",
+            (notified_until, user_id),
+        )
+    logger.info("Updated access notification user_id=%s notified_until=%s", user_id, notified_until)
 
 
 async def grant_access(db: Database, user_id: int, video_ids: Iterable[int], days: int = 30) -> None:

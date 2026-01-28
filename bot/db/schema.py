@@ -79,3 +79,15 @@ async def init_db(db: Database) -> None:
         )
         """
     )
+    await db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS access_notifications (
+            user_id INTEGER PRIMARY KEY,
+            notified_until INTEGER NOT NULL
+        )
+        """
+    )
+    try:
+        await db.execute("ALTER TABLE access_notifications ADD COLUMN notified_until INTEGER NOT NULL")
+    except Exception:
+        pass

@@ -41,8 +41,15 @@ async def my_videos(query: CallbackQuery, db: Database, config: Settings) -> Non
 
     video_ids = [video["id"] for video in accessible_videos]
     logger.info("My videos list user_id=%s videos=%s", query.from_user.id, video_ids)
+    now = now_ts()
+    lines = []
+    for video in accessible_videos:
+        access_until = video.get("access_until") or 0
+        remaining_days = max(0, int((access_until - now) / 86400) + 1)
+        lines.append(f"Урок {video['id']}: осталось {remaining_days} дн.")
+    extra = "\n" + "\n".join(lines)
     await query.message.answer(
-        "Ваши доступные видео:",
+        f"Ваши доступные уроки:{extra}",
         reply_markup=my_videos_kb(accessible_videos),
     )
     await query.answer()
