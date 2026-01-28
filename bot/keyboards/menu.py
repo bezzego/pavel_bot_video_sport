@@ -21,7 +21,7 @@ def main_menu_kb(is_admin: bool = False) -> InlineKeyboardMarkup:
         width=2,
     )
     builder.row(
-        InlineKeyboardButton(text="Мои видео", callback_data="menu:my_videos"),
+        InlineKeyboardButton(text="Мои уроки", callback_data="menu:my_videos"),
         InlineKeyboardButton(text="Купить доступ", callback_data="menu:buy"),
         width=2,
     )
