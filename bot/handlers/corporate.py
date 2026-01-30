@@ -6,6 +6,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 
 from bot.config.settings import Settings
+from bot.content_texts import LESSONS_LIST
 from bot.db.database import Database
 from bot.db import repository
 from bot.keyboards.menu import corporate_videos_kb, main_menu_only_kb
@@ -28,7 +29,11 @@ async def corporate_entry(query: CallbackQuery, db: Database, config: Settings, 
         videos = await repository.list_videos(db)
         logger.info("Corporate menu access user_id=%s", query.from_user.id)
         await query.message.answer(
-            "Корпоративный доступ активен. Выберите видео:",
+            "Корпоративный доступ активен. Выберите урок:",
+        )
+        await query.message.answer(
+            LESSONS_LIST,
+            parse_mode="HTML",
             reply_markup=corporate_videos_kb(videos),
         )
         await query.answer()
@@ -70,8 +75,10 @@ async def corporate_password(message: Message, db: Database, config: Settings, s
         await repository.reset_corporate_auth(db, message.from_user.id)
         await state.clear()
         videos = await repository.list_videos(db)
+        await message.answer("Пароль принят. Доступ открыт.")
         await message.answer(
-            "Пароль принят. Доступ открыт.",
+            LESSONS_LIST,
+            parse_mode="HTML",
             reply_markup=corporate_videos_kb(videos),
         )
         return

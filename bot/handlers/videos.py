@@ -4,6 +4,7 @@ from aiogram import F, Router
 from aiogram.types import CallbackQuery
 
 from bot.config.settings import Settings
+from bot.content_texts import LESSONS_LIST
 from bot.db.database import Database
 from bot.db import repository
 from bot.keyboards.menu import corporate_videos_kb, main_menu_only_kb, my_videos_kb
@@ -22,8 +23,10 @@ async def my_videos(query: CallbackQuery, db: Database, config: Settings) -> Non
     if user and user.get("is_corporate"):
         logger.info("My videos corporate user_id=%s", query.from_user.id)
         videos = await repository.list_videos(db)
+        await query.message.answer("Корпоративный доступ активен. Все уроки доступны:")
         await query.message.answer(
-            "Корпоративный доступ активен. Все видео доступны:",
+            LESSONS_LIST,
+            parse_mode="HTML",
             reply_markup=corporate_videos_kb(videos),
         )
         await query.answer()
