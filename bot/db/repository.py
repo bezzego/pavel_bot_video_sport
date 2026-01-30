@@ -4,6 +4,7 @@ from typing import Iterable, List, Optional
 
 from bot.db.database import Database
 from bot.utils.time import add_days, now_ts
+from bot.content_texts import LESSON_TITLES
 
 
 async def get_or_create_user(db: Database, user_id: int) -> dict:
@@ -56,7 +57,7 @@ async def set_user_corporate_status(db: Database, user_id: int, is_corporate: bo
 async def seed_videos(db: Database, file_ids: List[str]) -> None:
     logger = logging.getLogger("db.repository")
     for index in range(1, 11):
-        title = f"Урок {index}"
+        title = LESSON_TITLES[index - 1] if index - 1 < len(LESSON_TITLES) else f"Урок {index}"
         file_id = file_ids[index - 1] if index - 1 < len(file_ids) else ""
         existing = await db.fetchone("SELECT * FROM videos WHERE id = ?", (index,))
         if existing is None:
@@ -67,7 +68,7 @@ async def seed_videos(db: Database, file_ids: List[str]) -> None:
             logger.info("Seeded video id=%s has_file_id=%s", index, bool(file_id))
         else:
             existing_title = (existing.get("title") or "").strip()
-            if existing_title == f"Видео {index}":
+            if existing_title in {"", f"Видео {index}", f"Урок {index}"}:
                 await db.execute(
                     "UPDATE videos SET title = ? WHERE id = ?",
                     (title, index),
